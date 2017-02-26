@@ -119,7 +119,7 @@ export default class PurchasesBar extends Component {
           dataCards.map((item, key) => {
             return (
               <View key={key}>
-                <CardImage item={item} total={dataCards.length} position={key} step={this.state.dY} prevY={this.state.dY}/>
+                <CardImage item={item} total={dataCards.length} position={key} step={this.state.dY}/>
               </View>
             )
           })
@@ -183,45 +183,96 @@ class CardImage extends Component {
     }
 
     this.state = {
-      dY: this.props.step + startPosition,
-      rotateX: startRotate,
+      verticalPosition: startPosition,
+      imaginalVerticalPosition: startPosition,
+      rotate: startRotate,
       opacity: startOpacity,
       rotateSecond: startRotateSecond,
       scaleX: startScaleX,
-      inversionPosition: this._inversionPosition
+      inversionPosition: this._inversionPosition,
+      previousStep: 0
     }
   }
-  _setVerticalPosition (step, dy, previousPosition, inversionPosition) {
-    return previousPosition
+  _setVerticalPosition (step) {
+
+  }
+
+  componentWillReceiveProps () {
+    const step = this.props.step
+    const previousStep = this.state.previousStep
+    const previousVertivalPosition = this.state.verticalPosition
+    const previousRotate = this.state.rotate
+    const previousOpacity = this.state.opacity
+    const previousRotateSecond = this.state.rotateSecond
+    const previousScaleX = this.state.scaleX
+    const inversionPosition = this.state.inversionPosition
+    const startPosition = this.state.startPosition
+    let imaginalVerticalPosition = this.state.imaginalVerticalPosition
+
+    const changeY = step - previousStep
+
+
+    let newVerticalPosition = previousVertivalPosition
+    let newRotate = previousRotate
+    let newOpacity = previousOpacity
+    let newRotateSecond = previousRotateSecond
+    let newScaleX = previousScaleX
+
+    if (inversionPosition === 4) {
+      console.log(previousVertivalPosition + ' ' + imaginalVerticalPosition);
+    }
+
+
+    if (step <= 0) {
+      if (inversionPosition === 0) {
+        newVerticalPosition = imaginalVerticalPosition + step * 2
+      } else if (inversionPosition === 1) {
+        newVerticalPosition = imaginalVerticalPosition + step * 1.5
+      } else {
+        newVerticalPosition = imaginalVerticalPosition + step
+      }
+
+
+      if (newVerticalPosition <= 0) {
+        newVerticalPosition = 0
+      }
+    } else {
+      newVerticalPosition = newVerticalPosition + changeY
+    }
+
+
+
+
+    this.setState({
+      previousStep: step,
+      verticalPosition: newVerticalPosition,
+      imaginalVerticalPosition: imaginalVerticalPosition,
+      rotate: newRotate,
+      opacity: newOpacity,
+      scaleX: newScaleX,
+      rotateSecond: newRotateSecond
+    })
+
+/*
+
+      // While step < 0 (inertial to top position)
+    if (step <= 0) {
+
+        }
+      } else {
+
+        //stepVerticalPosition = this._setVerticalPosition(step, dy, this.state.dY, inversionPosition)
+      }
+*/
+
   }
 
   render () {
-    let step = this.props.step
-    let prevY = this.props.prevY
-    let stepRotate = this.state.rotateX
-    let stepVerticalPosition = this.state.dY + step
-
-    let stepOpacity = this.state.opacity
-    let stepRotateSecond = this.state.rotateSecond
-    let stepScaleX = this.state.scaleX
-    let inversionPosition = this.state.inversionPosition
-    let dy = step - prevY
-
-    if (stepVerticalPosition <= 0) {
-      stepVerticalPosition = 0
-    }
-
-    // While step < 0 (inertial to top position)
-    if (step <= 0) {
-      if (this._inversionPosition === 0) {
-        stepVerticalPosition = this.state.dY + step * 2
-      }
-      if (this._inversionPosition === 1) {
-        stepVerticalPosition = this.state.dY + step * 1.5
-      }
-    } else {
-      stepVerticalPosition = this._setVerticalPosition(step, dy, this.state.dY, inversionPosition)
-    }
+    const stepVerticalPosition = this.state.verticalPosition
+    const stepRotate = this.state.rotate
+    const stepOpacity = this.state.opacity
+    const stepRotateSecond = this.state.rotateSecond
+    const stepScaleX = this.state.scaleX
 
     const stepBlock = {
       transform: [{ rotateX: stepRotate + 'deg'}, {perspective: 1000}, {rotateX: -stepRotateSecond + 'deg'}, {scaleX: stepScaleX}],
