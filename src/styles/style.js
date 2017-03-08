@@ -156,12 +156,14 @@ var Style = PlatformStyleSheet.create({
     resizeMode: 'contain'
   },
   cardBar__item__imageAddings: {
-    width: win.width - 70 - 24,
-    height: 4,
-    opacity: 0,
+    width: win.width - 70 - 30,
+    height: 8,
+    opacity: 1,
     zIndex: 1,
-    top: 8,
-    left: 25,
+    top: 9,
+    left: 30,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     position: 'absolute',
     backgroundColor: '#444'
   }
