@@ -14,8 +14,8 @@ import {
   Dimensions
 } from 'react-native'
 
+// Генератор карт
 let dataCards = []
-
 for (let i = 0; i <= 20; i++) {
   dataCards[i] = {
     type: 'USD',
@@ -23,21 +23,27 @@ for (let i = 0; i <= 20; i++) {
   }
 }
 
+// Общий класс секции карт
 export default class PurchasesBar extends Component {
   constructor (props) {
     super(props)
 
+    // Позиция конца инерции в верхней позиции
     this.blockTopPosition = -25
+    // Блок работы PanResponder
     this.stopPan = false
+    // Длительность анимации инерции
+    this.duration = 500
 
     this.state = {
-      dY: 0,
+      dY: 0, // Текущая позиция
       prevY: 0
     }
   }
 
+  // Анимация инерции наверх
   _toStartTopPoint (blockTopPosition, totalDuration) {
-    totalDuration = 500 * totalDuration
+    totalDuration = this.duration * totalDuration
     this.stopPan = true
 
     let timePromise = new Promise((resolve, reject) => {
@@ -46,6 +52,7 @@ export default class PurchasesBar extends Component {
       let timer = setInterval(() => {
         let timePassed = Date.now() - startTime
 
+        // Если время вышло, окончательно ставим в начальную позицию и возобновляем работу PanResponder
         if (timePassed >= totalDuration) {
           this.setState({
             blockPan: false,
@@ -57,6 +64,7 @@ export default class PurchasesBar extends Component {
           return
         }
 
+        // Расчет текущей позиции
         let position = (blockTopPosition) * (totalDuration - timePassed) / totalDuration
 
         if (position >= 0) position = 0
@@ -75,11 +83,13 @@ export default class PurchasesBar extends Component {
 
   componentWillMount () {
     this._panResponder = PanResponder.create({
+      // Начало Touch (dragstart)
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         this.setState({
           prevY: this.state.dY + gestureState.vy
         })
       },
+      // Движение Touch (drag)
       onPanResponderMove: (evt, gestureState) => {
         if ((this.state.prevY + gestureState.dy <= this.blockTopPosition) && (this.stopPan !== true)) {
           this._toStartTopPoint(this.blockTopPosition, 1)
@@ -92,10 +102,12 @@ export default class PurchasesBar extends Component {
           })
         }
       },
+      // Аналог event.stopPropagination
       onPanResponderTerminationRequest: (evt, gestureState) => false,
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
         return gestureState.dx !== 0 && gestureState.dy !== 0
       },
+      // Конец Touch (dragend)
       onPanResponderRelease: (evt, gestureState) => {
         if ((this.state.prevY + gestureState.dy <= 0) && (this.stopPan === false)) {
           this._toStartTopPoint(this.state.prevY + gestureState.dy, (this.state.prevY + gestureState.dy) / this.blockTopPosition)
@@ -105,10 +117,12 @@ export default class PurchasesBar extends Component {
     })
   }
   render () {
+    // Текущий шаг
     const step = this.state.dY
 
+    // Расчет высоты окна
     let heightViewport = {
-      height: win.width / 1.6 + 90 + ((step < 0) ? step * 1.8 : 3.1 * step)
+      height: win.width / 1.6 + 90 + ((step < 0) ? step * 1.8 : 3.05 * step)
     }
     return (
       <Animated.View style={[ Style.cardBar, heightViewport ]} {...this._panResponder.panHandlers}>
@@ -130,24 +144,27 @@ class CardImage extends Component {
   constructor (props) {
     super(props)
 
-    this._totalUnits = this.props.total
-    this._position = this.props.position
-    this._inversionPosition = this._totalUnits - this._position - 1
+    // Переворачиваем позицию
+    this.totalUnits = this.props.total
+    this.position = this.props.position
+    this.inversionPosition = this.totalUnits - this.position - 1
 
+    // Стартовые условия
     let startPosition = 0
     let startOpacity = 0
     let startRotate = 10
     let startRotateSecond = 10
     let startScaleX = 0.9
 
-    switch (this._inversionPosition) {
+    // Cтавим согласно дизайну первые карты
+    switch (this.inversionPosition) {
       case 0:
-        startPosition = 120 + 1000
+        startPosition = 120
         startOpacity = 1
         startScaleX = 1
         break
       case 1:
-        startPosition = 80 + 1000
+        startPosition = 80
         startOpacity = 0.9
         startScaleX = 1
         break
@@ -156,10 +173,17 @@ class CardImage extends Component {
         startOpacity = 0.8
         startScaleX = 1
         break
+      case 3:
+        startOpacity = 0.2
+        break
+      case 4:
+        startOpacity = 0.1
+        break
       default:
         break
     }
 
+    // Выставляем значени
     this.state = {
       verticalPosition: startPosition,
       startVerticalPosition: startPosition,
@@ -171,16 +195,16 @@ class CardImage extends Component {
       startRotateSecond: startRotateSecond,
       scaleX: startScaleX,
       startScaleX: startScaleX,
-      inversionPosition: this._inversionPosition,
+      inversionPosition: this.inversionPosition,
       previousStep: 0,
       heightViewport: win.height - win.width / 1.6
     }
   }
 
+  // Момент монтирования и обновления step
   componentWillMount () {
     this._setPosition()
   }
-
   componentWillReceiveProps () {
     this._setPosition()
   }
@@ -206,7 +230,7 @@ class CardImage extends Component {
 
     const stepSlide = 40
 
-    const newVerticalStep = step - stepSlide * (inversionPosition) + 300
+    const newVerticalStep = step - stepSlide * (inversionPosition) + 302
 
     let newVerticalPosition = previousVerticalPosition
     let newRotate = previousRotate
@@ -223,8 +247,11 @@ class CardImage extends Component {
         case 1:
           newVerticalPosition += changeY * 1.8
           break
+        case 2:
+          newVerticalPosition += changeY * 2.2
+          break
         default:
-          newVerticalPosition += changeY
+          newVerticalPosition += newVerticalPosition + changeY
       }
 
       if (newVerticalPosition <= 0) newVerticalPosition = 0
@@ -238,36 +265,75 @@ class CardImage extends Component {
 
       switch (inversionPosition) {
         case 0:
-          newVerticalPosition = startVerticalPosition + step * 3.2
-          break
-        case 1:
-        
-          if (newVerticalPosition < heightViewport * 0.7) {
-            newVerticalPosition = startVerticalPosition + step * 2.3
-          } else {
-            newVerticalPosition = heightViewport * 0.7 + (step - (heightViewport * 0.7 - startVerticalPosition) / 2.3) * 3.4
+          localStep = 3
+
+          if (newVerticalPosition >= heightViewport * 1) {
+            startPoint = heightViewport * 1
+            decreaseStep += (heightViewport * 1 - startVerticalPosition) / localStep
+            localStep = 2.8
           }
           break
-        case 2:
-          localStep = 1.6
+        case 1:
 
-          if (newVerticalPosition >= heightViewport * 0.5) {
-            startPoint = heightViewport * 0.5
-            decreaseStep += (heightViewport * 0.5 - startVerticalPosition) / localStep
-            localStep = 3.8
+          localStep = 2.1
+
+          if (newVerticalPosition >= heightViewport * 0.38) {
+            startPoint = heightViewport * 0.38
+            decreaseStep += (heightViewport * 0.38 - startVerticalPosition) / localStep
+            localStep = 2.5
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.7) {
+            startPoint = heightViewport * 0.7
+            decreaseStep += (heightViewport * 0.32) / localStep
+            localStep = 2.9
           }
 
           if (newVerticalPosition >= heightViewport * 0.8) {
             startPoint = heightViewport * 0.8
-            decreaseStep += heightViewport * 0.3 / localStep
-            localStep = 3
+            decreaseStep += (heightViewport * 0.1) / localStep
+            localStep = 3.85
           }
 
           if (newVerticalPosition >= heightViewport * 0.9) {
             startPoint = heightViewport * 0.9
             decreaseStep += heightViewport * 0.1 / localStep
-            localStep = 2.2
+            localStep = 4.45
           }
+
+          if (newVerticalPosition >= heightViewport * 0.95) {
+            startPoint = heightViewport * 0.95
+            decreaseStep += heightViewport * 0.05 / localStep
+            localStep = 3.85
+          }
+
+          if (newVerticalPosition >= heightViewport * 1) {
+            startPoint = heightViewport * 1
+            decreaseStep += heightViewport * 0.05 / localStep
+            localStep = 1.9
+          }
+          break
+        case 2:
+          localStep = 1.65
+
+          if (newVerticalPosition >= heightViewport * 0.5) {
+            startPoint = heightViewport * 0.5
+            decreaseStep += (heightViewport * 0.5 - startVerticalPosition) / localStep
+            localStep = 3.9
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.8) {
+            startPoint = heightViewport * 0.8
+            decreaseStep += heightViewport * 0.3 / localStep
+            localStep = 2.98
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.9) {
+            startPoint = heightViewport * 0.9
+            decreaseStep += heightViewport * 0.1 / localStep
+            localStep = 2.1
+          }
+
           break
         default:
 
@@ -350,7 +416,6 @@ class CardImage extends Component {
           }
       }
 
-
       newVerticalPosition = startPoint + (stepPoint - decreaseStep) * localStep
 
       const proportion = newVerticalPosition / heightViewport
@@ -383,12 +448,14 @@ class CardImage extends Component {
     const stepScaleX = this.state.scaleX
     const heightViewport = this.state.heightViewport
 
+    // Движение карты
     const stepBlock = {
       transform: [{ rotateX: stepRotate + 'deg'}, {perspective: 1000}, {rotateX: -stepRotateSecond + 'deg'}, {scaleX: stepScaleX}],
       top: stepVerticalPosition,
       opacity: stepOpacity
     }
 
+    // Движение псевдо 3d (нет аналога css preserve3d в react-native)
     const stepAddView = {transform: [{rotateX: 130 - stepRotate + 'deg', opacity : stepVerticalPosition / heightViewport}]}
 
     return (
