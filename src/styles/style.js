@@ -145,7 +145,7 @@ var Style = PlatformStyleSheet.create({
   cardBar__item: {
     position: 'absolute',
     left: 20,
-    height: win.height/1.65,
+    height: win.height / 1.65,
     paddingTop: 20,
     width: win.width
   },
@@ -157,15 +157,15 @@ var Style = PlatformStyleSheet.create({
   },
   cardBar__item__imageAddings: {
     width: win.width - 70 - 30,
-    height: 8,
+    height: 9,
     opacity: 1,
     zIndex: 1,
-    top: 9,
+    top: 8,
     left: 30,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    borderTopLeftRadius: 90,
+    borderTopRightRadius: 90,
     position: 'absolute',
-    backgroundColor: '#444'
+    backgroundColor: '#4a4a4a'
   }
 })
 

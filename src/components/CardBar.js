@@ -92,7 +92,7 @@ export default class PurchasesBar extends Component {
           })
         }
       },
-      onPanResponderTerminationRequest: (evt, gestureState) => true,
+      onPanResponderTerminationRequest: (evt, gestureState) => false,
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
         return gestureState.dx !== 0 && gestureState.dy !== 0
       },
@@ -108,7 +108,7 @@ export default class PurchasesBar extends Component {
     const step = this.state.dY
 
     let heightViewport = {
-      height: win.width / 1.6 + 70 + ((step < 0) ? step * 1.8 : 3 * step)
+      height: win.width / 1.6 + 90 + ((step < 0) ? step * 1.8 : 3.1 * step)
     }
     return (
       <Animated.View style={[ Style.cardBar, heightViewport ]} {...this._panResponder.panHandlers}>
@@ -142,35 +142,19 @@ class CardImage extends Component {
 
     switch (this._inversionPosition) {
       case 0:
-        startPosition = 100
+        startPosition = 120 + 1000
         startOpacity = 1
-        startRotate = 40
-        startRotateSecond = 20
         startScaleX = 1
         break
       case 1:
-        startPosition = 65
+        startPosition = 80 + 1000
         startOpacity = 0.9
-        startRotate = 20
-        startRotateSecond = 15
         startScaleX = 1
         break
       case 2:
-        startPosition = 20
-        startOpacity = 0.7
-        startRotate = 10
-        startRotateSecond = 10
+        startPosition = 40
+        startOpacity = 0.8
         startScaleX = 1
-        break
-      case 3:
-        startPosition = 8
-        startOpacity = 0.2
-        startScaleX = 0.98
-        break
-      case 4:
-        startPosition = 0
-        startOpacity = 0.1
-        startScaleX = 0.9
         break
       default:
         break
@@ -193,7 +177,16 @@ class CardImage extends Component {
     }
   }
 
+  componentWillMount () {
+    this._setPosition()
+  }
+
   componentWillReceiveProps () {
+    this._setPosition()
+  }
+
+
+  _setPosition() {
     const step = this.props.step
     const previousStep = this.state.previousStep
     const previousVerticalPosition = this.state.verticalPosition
@@ -206,15 +199,14 @@ class CardImage extends Component {
     const startRotate = this.state.startRotate
     const startRotateSecond = this.state.startRotateSecond
     const startVerticalPosition = this.state.startVerticalPosition
+    const changeY = step - previousStep
     let startOpacity = this.state.startOpacity
     const startScaleX = this.state.startScaleX
-    const changeY = step - previousStep
     const heightViewport = this.state.heightViewport
 
+    const stepSlide = 40
 
-    const stepSlide = 60
-
-    const newVerticalStep = step - stepSlide * (inversionPosition - 3)
+    const newVerticalStep = step - stepSlide * (inversionPosition) + 300
 
     let newVerticalPosition = previousVerticalPosition
     let newRotate = previousRotate
@@ -222,18 +214,17 @@ class CardImage extends Component {
     let newRotateSecond = previousRotateSecond
     let newScaleX = previousScaleX
 
-    if (step <= 0) {
+    if (step < 0) {
       newVerticalPosition = startVerticalPosition
-
       switch (inversionPosition) {
         case 0:
-          newVerticalPosition += step * 1.4
+          newVerticalPosition += changeY * 1.4
           break
         case 1:
-          newVerticalPosition += step * 1.8
+          newVerticalPosition += changeY * 1.8
           break
         default:
-          newVerticalPosition += step
+          newVerticalPosition += changeY
       }
 
       if (newVerticalPosition <= 0) newVerticalPosition = 0
@@ -241,78 +232,128 @@ class CardImage extends Component {
     } else {
       switch (inversionPosition) {
         case 0:
-          newVerticalPosition = startVerticalPosition + step * 3
+          newVerticalPosition = startVerticalPosition + step * 3.2
           break
         case 1:
 
-          if (newVerticalPosition < heightViewport * 0.75)
-            newVerticalPosition = startVerticalPosition + step * 2.32
-          else
-            newVerticalPosition = heightViewport * 0.75 + (step - (heightViewport * 0.75 - startVerticalPosition) / 2.32) * 3
-
+          if (newVerticalPosition < heightViewport * 0.7) {
+            newVerticalPosition = startVerticalPosition + step * 2.45
+          } else {
+            newVerticalPosition = heightViewport * 0.7 + (step - (heightViewport * 0.7 - startVerticalPosition) / 2.45) * 3.83
+          }
           break
         case 2:
 
-          if (newVerticalPosition < heightViewport * 0.4)
-            newVerticalPosition = startVerticalPosition + step * 1.43
-          else
-            newVerticalPosition = heightViewport * 0.4 + (step - (heightViewport * 0.4 - startVerticalPosition) / 1.43) * 3.75
-          break
-        case 3:
-
-          if (previousVerticalPosition < heightViewport * 0.15)
-            newVerticalPosition = startVerticalPosition + step * 0.5
-          else if (previousVerticalPosition > 0.75 * heightViewport)
-            newVerticalPosition = heightViewport * 0.75 + (step - (heightViewport * 0.15 - startVerticalPosition) / 0.5 - (heightViewport * 0.6) / 4.1) * 5.3
-          else
-            newVerticalPosition = heightViewport * 0.15 + (step - (heightViewport * 0.15 - startVerticalPosition) / 0.5) * 4.1
-
+          if (newVerticalPosition < heightViewport * 0.5) {
+            newVerticalPosition = startVerticalPosition + step * 1.3
+          } else if ((newVerticalPosition >= heightViewport * 0.5) && (newVerticalPosition < heightViewport * 0.8)) {
+            newVerticalPosition = heightViewport * 0.5 + (step - (heightViewport * 0.5 - startVerticalPosition) / 1.3) * 3.1
+          } else {
+            newVerticalPosition = heightViewport * 0.8 + (step - (heightViewport * 0.5 - startVerticalPosition) / 1.3 - heightViewport * 0.3 / 3.1) * 3.5
+          }
           break
         default:
-          console.log(newVerticalPosition)
-          if ((newVerticalStep >= 0) && (newVerticalPosition < 0.1 * heightViewport)) {
-            newVerticalPosition = startVerticalPosition + newVerticalStep * 0.5
-          } else if ((newVerticalStep >= 0) && (newVerticalPosition >= heightViewport * 0.1) && (newVerticalPosition < heightViewport * 0.4)) {
-            newVerticalPosition = heightViewport * 0.1 + (newVerticalStep - (heightViewport * 0.1 - startVerticalPosition) / 0.5) * 3
-          } else {
-            //
-          }
-      }
 
-      if ((newVerticalStep + 60 > 0) && (inversionPosition > 3)) {
-        startOpacity = 0.1
-      } else {
-        if (inversionPosition > 3) {
-          startOpacity = 0
+          let startPoint = startVerticalPosition
+          let localStep = 0.16
+          let decreaseStep = 0
+
+          if (newVerticalPosition >= heightViewport * 0.08) {
+            decreaseStep = (heightViewport * 0.08 - startVerticalPosition) / localStep
+            startPoint = heightViewport * 0.08
+            localStep = 0.8
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.15) {
+            decreaseStep += heightViewport * 0.07 / localStep
+            startPoint = heightViewport * 0.15
+            localStep = 1.6
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.2) {
+            decreaseStep += heightViewport * 0.05 / localStep
+            startPoint = heightViewport * 0.2
+            localStep = 2.1
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.3) {
+            decreaseStep += heightViewport * 0.1 / localStep
+            startPoint = heightViewport * 0.3
+            localStep = 2.5
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.4) {
+            decreaseStep += heightViewport * 0.1 / localStep
+            startPoint = heightViewport * 0.4
+            localStep = 2.7
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.5) {
+            decreaseStep += heightViewport * 0.1 / localStep
+            startPoint = heightViewport * 0.5
+            localStep = 2.9
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.6) {
+            decreaseStep += heightViewport * 0.1 / localStep
+            startPoint = heightViewport * 0.6
+            localStep = 3.1
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.75) {
+            decreaseStep += heightViewport * 0.15 / localStep
+            startPoint = heightViewport * 0.75
+            localStep = 3.1
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.8) {
+            decreaseStep += heightViewport * 0.05 / localStep
+            startPoint = heightViewport * 0.8
+            localStep = 3.05
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.85) {
+            decreaseStep += heightViewport * 0.05 / localStep
+            startPoint = heightViewport * 0.85
+            localStep = 2.8
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.9) {
+            decreaseStep += heightViewport * 0.05 / localStep
+            startPoint = heightViewport * 0.9
+            localStep = 2.9
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.95) {
+            decreaseStep += heightViewport * 0.05 / localStep
+            startPoint = heightViewport * 0.95
+            localStep = 2.45
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.98) {
+            decreaseStep += heightViewport * 0.03 / localStep
+            startPoint = heightViewport * 0.98
+            localStep = 2.1
+          }
+
+        if (newVerticalStep >= 0) newVerticalPosition = startPoint + (newVerticalStep - decreaseStep) * localStep
+
+        if ((inversionPosition === 3) || (inversionPosition === 4)) {
+          console.log(inversionPosition + ' ' + newVerticalPosition + ' ' + previousVerticalPosition + ' ' + newVerticalStep)
         }
+
       }
 
       const proportion = newVerticalPosition / heightViewport
 
       newScaleX = startScaleX + ((newVerticalPosition - startVerticalPosition) / (heightViewport * 0.1)) * (1 - startScaleX)
-      newOpacity = startOpacity + ((newVerticalPosition - startVerticalPosition) / (heightViewport * 0.15)) * (1 - startOpacity)
-
-      switch (inversionPosition) {
-        case 0:
-          newRotate = startRotate + proportion * (95 - startRotate)
-          newRotateSecond = startRotateSecond + proportion * proportion * (40 - startRotateSecond)
-          newOpacity = startOpacity + ((newVerticalPosition - startVerticalPosition) / (heightViewport * 0.4)) * (1 - startOpacity)
-          break
-        case 1:
-          newRotate = startRotate + proportion * (90 - startRotate)
-          newRotateSecond = startRotateSecond + proportion * (35 - startRotateSecond)
-          break
-        case 2:
-          newRotate = startRotate + proportion * (90 - startRotate)
-          newRotateSecond = startRotateSecond + proportion * (35 - startRotateSecond)
-          break
-        default:
-          newRotate = startRotate + proportion * (90 - startRotate)
-          newRotateSecond = startRotateSecond + proportion * (35 - startRotateSecond)
-      }
+      newOpacity = startOpacity + ((newVerticalPosition - startVerticalPosition - 20) / (heightViewport * 0.2)) * (1 - startOpacity)
+      newRotate = startRotate + proportion * (90 - startRotate)
+      newRotateSecond = startRotateSecond + proportion * (35 - startRotateSecond)
 
       if (newScaleX >= 1) newScaleX = 1
       if (newOpacity >= 1) newOpacity = 1
+      if (total - 1 === inversionPosition) newVerticalPosition = 0
     }
 
     this.setState({
@@ -339,7 +380,7 @@ class CardImage extends Component {
       opacity: stepOpacity
     }
 
-    const stepAddView = {transform: [{rotateX: 120 - stepRotate + 'deg', opacity : stepVerticalPosition / heightViewport}]}
+    const stepAddView = {transform: [{rotateX: 130 - stepRotate + 'deg', opacity : stepVerticalPosition / heightViewport}]}
 
     return (
       <View style={[Style.cardBar__item, stepBlock]}>
