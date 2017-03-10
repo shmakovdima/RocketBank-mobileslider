@@ -230,33 +230,46 @@ class CardImage extends Component {
       if (newVerticalPosition <= 0) newVerticalPosition = 0
 
     } else {
+
+      let startPoint = startVerticalPosition
+      let localStep = 0.16
+      let decreaseStep = 0
+      let stepPoint = (inversionPosition > 2) ? newVerticalStep : step
+
       switch (inversionPosition) {
         case 0:
           newVerticalPosition = startVerticalPosition + step * 3.2
           break
         case 1:
-
+        
           if (newVerticalPosition < heightViewport * 0.7) {
-            newVerticalPosition = startVerticalPosition + step * 2.45
+            newVerticalPosition = startVerticalPosition + step * 2.3
           } else {
-            newVerticalPosition = heightViewport * 0.7 + (step - (heightViewport * 0.7 - startVerticalPosition) / 2.45) * 3.83
+            newVerticalPosition = heightViewport * 0.7 + (step - (heightViewport * 0.7 - startVerticalPosition) / 2.3) * 3.4
           }
           break
         case 2:
+          localStep = 1.6
 
-          if (newVerticalPosition < heightViewport * 0.5) {
-            newVerticalPosition = startVerticalPosition + step * 1.3
-          } else if ((newVerticalPosition >= heightViewport * 0.5) && (newVerticalPosition < heightViewport * 0.8)) {
-            newVerticalPosition = heightViewport * 0.5 + (step - (heightViewport * 0.5 - startVerticalPosition) / 1.3) * 3.1
-          } else {
-            newVerticalPosition = heightViewport * 0.8 + (step - (heightViewport * 0.5 - startVerticalPosition) / 1.3 - heightViewport * 0.3 / 3.1) * 3.5
+          if (newVerticalPosition >= heightViewport * 0.5) {
+            startPoint = heightViewport * 0.5
+            decreaseStep += (heightViewport * 0.5 - startVerticalPosition) / localStep
+            localStep = 3.8
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.8) {
+            startPoint = heightViewport * 0.8
+            decreaseStep += heightViewport * 0.3 / localStep
+            localStep = 3
+          }
+
+          if (newVerticalPosition >= heightViewport * 0.9) {
+            startPoint = heightViewport * 0.9
+            decreaseStep += heightViewport * 0.1 / localStep
+            localStep = 2.2
           }
           break
         default:
-
-          let startPoint = startVerticalPosition
-          let localStep = 0.16
-          let decreaseStep = 0
 
           if (newVerticalPosition >= heightViewport * 0.08) {
             decreaseStep = (heightViewport * 0.08 - startVerticalPosition) / localStep
@@ -335,14 +348,10 @@ class CardImage extends Component {
             startPoint = heightViewport * 0.98
             localStep = 2.1
           }
-
-        if (newVerticalStep >= 0) newVerticalPosition = startPoint + (newVerticalStep - decreaseStep) * localStep
-
-        if ((inversionPosition === 3) || (inversionPosition === 4)) {
-          console.log(inversionPosition + ' ' + newVerticalPosition + ' ' + previousVerticalPosition + ' ' + newVerticalStep)
-        }
-
       }
+
+
+      newVerticalPosition = startPoint + (stepPoint - decreaseStep) * localStep
 
       const proportion = newVerticalPosition / heightViewport
 
