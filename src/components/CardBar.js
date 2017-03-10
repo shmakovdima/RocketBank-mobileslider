@@ -16,7 +16,7 @@ import {
 
 // Генератор карт
 let dataCards = []
-for (let i = 0; i <= 20; i++) {
+for (let i = 0; i <= 6; i++) {
   dataCards[i] = {
     type: 'USD',
     value: '4000'
@@ -76,7 +76,7 @@ export default class PurchasesBar extends Component {
       }, 20)
     })
     timePromise.then(
-      success => this.stopPan = false,
+      success => setTimeout(() => this.stopPan = false, 500),
       error => alert('Ошибка в приложении, перезапустите')
     )
   }
@@ -102,8 +102,6 @@ export default class PurchasesBar extends Component {
           })
         }
       },
-      // Аналог event.stopPropagination
-      onPanResponderTerminationRequest: (evt, gestureState) => false,
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
         return gestureState.dx !== 0 && gestureState.dy !== 0
       },
@@ -122,7 +120,7 @@ export default class PurchasesBar extends Component {
 
     // Расчет высоты окна
     let heightViewport = {
-      height: win.width / 1.6 + 90 + ((step < 0) ? step * 1.8 : 3.05 * step)
+      height: win.width / 1.6 + 90 + ((step < 0) ? step * 1.4 : 3.05 * step)
     }
     return (
       <Animated.View style={[ Style.cardBar, heightViewport ]} {...this._panResponder.panHandlers}>
@@ -196,6 +194,7 @@ class CardImage extends Component {
       scaleX: startScaleX,
       startScaleX: startScaleX,
       inversionPosition: this.inversionPosition,
+      position: this.position,
       previousStep: 0,
       heightViewport: win.height - win.width / 1.6
     }
@@ -227,6 +226,7 @@ class CardImage extends Component {
     let startOpacity = this.state.startOpacity
     const startScaleX = this.state.startScaleX
     const heightViewport = this.state.heightViewport
+    const position = this.state.position
 
     const stepSlide = 40
 
@@ -239,22 +239,20 @@ class CardImage extends Component {
     let newScaleX = previousScaleX
 
     if (step < 0) {
-      newVerticalPosition = startVerticalPosition
+
       switch (inversionPosition) {
         case 0:
-          newVerticalPosition += changeY * 1.4
+          newVerticalPosition = startVerticalPosition + step * 1.4
           break
         case 1:
-          newVerticalPosition += changeY * 1.8
+          newVerticalPosition = startVerticalPosition + step * 1.8
           break
         case 2:
-          newVerticalPosition += changeY * 2.2
+          newVerticalPosition = startVerticalPosition + step * 2.2
           break
         default:
-          newVerticalPosition += newVerticalPosition + changeY
+          newVerticalPosition = previousVerticalPosition + changeY
       }
-
-      if (newVerticalPosition <= 0) newVerticalPosition = 0
 
     } else {
 
@@ -427,7 +425,6 @@ class CardImage extends Component {
 
       if (newScaleX >= 1) newScaleX = 1
       if (newOpacity >= 1) newOpacity = 1
-      if (total - 1 === inversionPosition) newVerticalPosition = 0
     }
 
     this.setState({
