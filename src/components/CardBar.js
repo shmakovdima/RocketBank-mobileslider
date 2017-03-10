@@ -54,11 +54,6 @@ export default class PurchasesBar extends Component {
 
         // Если время вышло, окончательно ставим в начальную позицию и возобновляем работу PanResponder
         if (timePassed >= totalDuration) {
-          this.setState({
-            blockPan: false,
-            prevY: 0,
-            dY: 0
-          })
           clearInterval(timer)
           resolve('success')
           return
@@ -76,7 +71,14 @@ export default class PurchasesBar extends Component {
       }, 20)
     })
     timePromise.then(
-      success => setTimeout(() => this.stopPan = false, 500),
+      success => {
+        setTimeout(() => this.stopPan = false, 500)
+
+        this.setState({
+          prevY: 0,
+          dY: 0
+        })
+      },
       error => alert('Ошибка в приложении, перезапустите')
     )
   }
@@ -92,7 +94,7 @@ export default class PurchasesBar extends Component {
       // Движение Touch (drag)
       onPanResponderMove: (evt, gestureState) => {
         if ((this.state.prevY + gestureState.dy <= this.blockTopPosition) && (this.stopPan !== true)) {
-          this._toStartTopPoint(this.blockTopPosition, 1)
+          this._toStartTopPoint(this.state.prevY + gestureState.dy, (this.state.prevY + gestureState.dy) / this.blockTopPosition)
           return false
         } else if (this.stopPan === true) {
           return false
@@ -252,6 +254,8 @@ class CardImage extends Component {
           break
         default:
           newVerticalPosition = previousVerticalPosition + changeY
+
+        //if (newVerticalPosition > startVerticalPosition) newVerticalPosition = startVerticalPosition
       }
 
     } else {
@@ -334,7 +338,6 @@ class CardImage extends Component {
 
           break
         default:
-
           if (newVerticalPosition >= heightViewport * 0.08) {
             decreaseStep = (heightViewport * 0.08 - startVerticalPosition) / localStep
             startPoint = heightViewport * 0.08
@@ -422,6 +425,21 @@ class CardImage extends Component {
       newOpacity = startOpacity + ((newVerticalPosition - startVerticalPosition - 20) / (heightViewport * 0.2)) * (1 - startOpacity)
       newRotate = startRotate + proportion * (90 - startRotate)
       newRotateSecond = startRotateSecond + proportion * (35 - startRotateSecond)
+
+
+      switch (position) {
+        case 0:
+          newScaleX = startScaleX + ((newVerticalPosition - startVerticalPosition) / (heightViewport * 0.1)) * (1 - startScaleX)
+          newOpacity = startOpacity + ((newVerticalPosition - startVerticalPosition - 20) / (heightViewport * 0.05)) * (1 - startOpacity)
+          if (newVerticalPosition > 10) newVerticalPosition = 10
+          break;
+        case 1:
+          if (newVerticalPosition > win.width / 1.6 - 60) newVerticalPosition = win.width / 1.6 - 60
+        case 2:
+          if (newVerticalPosition >  2 * win.width / 1.6 - 155) newVerticalPosition = 2 * win.width / 1.6 - 155
+        default:
+
+      }
 
       if (newScaleX >= 1) newScaleX = 1
       if (newOpacity >= 1) newOpacity = 1
