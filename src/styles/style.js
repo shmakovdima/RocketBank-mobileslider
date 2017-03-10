@@ -156,7 +156,7 @@ var Style = PlatformStyleSheet.create({
     resizeMode: 'contain'
   },
   cardBar__item__imageAddings: {
-    width: win.width - 70 - 30,
+    width: win.width - 100,
     height: 9,
     opacity: 1,
     zIndex: 1,

@@ -16,7 +16,7 @@ import {
 
 // Генератор карт
 let dataCards = []
-for (let i = 0; i <= 6; i++) {
+for (let i = 0; i <= 15; i++) {
   dataCards[i] = {
     type: 'USD',
     value: '4000'
@@ -30,20 +30,70 @@ export default class PurchasesBar extends Component {
 
     // Позиция конца инерции в верхней позиции
     this.blockTopPosition = -25
+    // Позиция конца инерции в нижней позиции
+    this.blockBottomPosition = 53
+
+    this.bottomPosition = 65
     // Блок работы PanResponder
     this.stopPan = false
     // Длительность анимации инерции
     this.duration = 500
+    // Разница между картами
+    this.stepSlide = 40
 
     this.state = {
       dY: 0, // Текущая позиция
-      prevY: 0
+      prevY: 0 // Предыдущая позиция
     }
   }
 
-  // Анимация инерции наверх
+  // Анимация инерции наверху
   _toStartTopPoint (blockTopPosition, totalDuration) {
     totalDuration = this.duration * totalDuration
+    if (totalDuration > this.duration) totalDuration = this.duration
+
+    this.stopPan = true
+
+    let timePromise = new Promise((resolve, reject) => {
+      let startTime = Date.now()
+
+      let timer = setInterval(() => {
+        let timePassed = Date.now() - startTime
+
+        // Если время вышло, окончательно ставим в начальную позицию и возобновляем работу PanResponder
+        if (timePassed >= totalDuration) {
+          clearInterval(timer)
+          this.setState({
+            prevY: 0,
+            dY: 0
+          })
+          resolve('success')
+          return false
+        }
+
+        // Расчет текущей позиции
+        let position = (this.blockTopPosition) * (totalDuration - timePassed) / totalDuration
+
+        if (position >= 0) position = 0
+
+        this.setState({
+          dY: position,
+          prevY: position
+        })
+      }, 20)
+    })
+
+    timePromise.then(
+      success => {
+        setTimeout(() => this.stopPan = false, 500)
+      },
+      error => alert('Ошибка в приложении, перезапустите')
+    )
+  }
+  // Анимация инерции внизу
+  _toStartBottomPoint (currentPosition, totalDuration) {
+    totalDuration = this.duration * totalDuration
+    if (totalDuration > this.duration) totalDuration = this.duration
     this.stopPan = true
 
     let timePromise = new Promise((resolve, reject) => {
@@ -60,31 +110,25 @@ export default class PurchasesBar extends Component {
         }
 
         // Расчет текущей позиции
-        let position = (blockTopPosition) * (totalDuration - timePassed) / totalDuration
-
-        if (position >= 0) position = 0
+        let position = (this.bottomPosition - this.blockBottomPosition) * (totalDuration - timePassed) / totalDuration
 
         this.setState({
           dY: position,
           prevY: position
         })
       }, 20)
-    })
-    timePromise.then(
-      success => {
-        setTimeout(() => this.stopPan = false, 500)
 
-        this.setState({
-          prevY: 0,
-          dY: 0
-        })
-      },
-      error => alert('Ошибка в приложении, перезапустите')
-    )
+    })
+
+
   }
 
   componentWillMount () {
     this._panResponder = PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponderCapture: () => false,
       // Начало Touch (dragstart)
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         this.setState({
@@ -93,14 +137,24 @@ export default class PurchasesBar extends Component {
       },
       // Движение Touch (drag)
       onPanResponderMove: (evt, gestureState) => {
-        if ((this.state.prevY + gestureState.dy <= this.blockTopPosition) && (this.stopPan !== true)) {
-          this._toStartTopPoint(this.state.prevY + gestureState.dy, (this.state.prevY + gestureState.dy) / this.blockTopPosition)
+        let currentStep = this.state.prevY + gestureState.dy
+        // Блок верхней позиции
+        if ((currentStep <= this.blockTopPosition) && (this.stopPan !== true)) {
+          this._toStartTopPoint(currentStep, currentStep / this.blockTopPosition)
           return false
-        } else if (this.stopPan === true) {
+        }
+        // Блок нижней позиции
+        else if ((currentStep - this.stepSlide * (dataCards.length)) + this.blockBottomPosition > 0) {
+          this._toStartBottomPoint(currentStep, (currentStep - this.stepSlide * (dataCards.length) + this.blockBottomPosition) / (this.bottomPosition - this.blockBottomPosition))
           return false
+        }
+        // Если позиция блокирована
+        else if (this.stopPan === true) {
+          return false
+        // Все нормально
         } else {
           this.setState({
-            dY: this.state.prevY + gestureState.dy
+            dY: currentStep
           })
         }
       },
@@ -130,7 +184,7 @@ export default class PurchasesBar extends Component {
           dataCards.map((item, key) => {
             return (
               <View key={key}>
-                <CardImage item={item} total={dataCards.length} position={key} step={this.state.dY}/>
+                <CardImage item={item} total={dataCards.length} position={key} stepSlide = {this.stepSlide} bottomPosition={this.bottomPosition} step={this.state.dY}/>
               </View>
             )
           })
@@ -145,9 +199,11 @@ class CardImage extends Component {
     super(props)
 
     // Переворачиваем позицию
-    this.totalUnits = this.props.total
+    this.total = this.props.total
     this.position = this.props.position
-    this.inversionPosition = this.totalUnits - this.position - 1
+    this.inversionPosition = this.total - this.position - 1
+    // Высота экрана с шагом
+    this.heightViewport = win.height - win.width / 1.6
 
     // Стартовые условия
     let startPosition = 0
@@ -183,7 +239,7 @@ class CardImage extends Component {
         break
     }
 
-    // Выставляем значени
+    // Выставляем значения
     this.state = {
       verticalPosition: startPosition,
       startVerticalPosition: startPosition,
@@ -195,10 +251,8 @@ class CardImage extends Component {
       startRotateSecond: startRotateSecond,
       scaleX: startScaleX,
       startScaleX: startScaleX,
-      inversionPosition: this.inversionPosition,
-      position: this.position,
       previousStep: 0,
-      heightViewport: win.height - win.width / 1.6
+      initionVerticalPosition: null
     }
   }
 
@@ -210,30 +264,46 @@ class CardImage extends Component {
     this._setPosition()
   }
 
+  _setVerticalPosition (startPoint, stepPoint, decreaseStep, localStep, maxOfBreakpoint, nextLocalStep, heightViewport) {
+    let currentVerticalPosition = startPoint + (stepPoint - decreaseStep) * localStep
 
-  _setPosition() {
+    if (currentVerticalPosition >= maxOfBreakpoint * heightViewport) {
+      currentVerticalPosition = maxOfBreakpoint * heightViewport + (currentVerticalPosition - maxOfBreakpoint * heightViewport) / localStep * nextLocalStep
+    }
+    return currentVerticalPosition
+  }
+
+  _setPosition () {
+    // Шаг
     const step = this.props.step
+    const changeY = step - previousStep
+    // Предыдущие позиции
     const previousStep = this.state.previousStep
     const previousVerticalPosition = this.state.verticalPosition
     const previousRotate = this.state.rotate
     const previousOpacity = this.state.opacity
     const previousRotateSecond = this.state.rotateSecond
-    const total = this.props.total
     const previousScaleX = this.state.scaleX
-    const inversionPosition = this.state.inversionPosition
+    // Перевернутая позиция
+    const inversionPosition = this.inversionPosition
+    const total = this.props.total
+    // Стартовые условия
     const startRotate = this.state.startRotate
     const startRotateSecond = this.state.startRotateSecond
     const startVerticalPosition = this.state.startVerticalPosition
-    const changeY = step - previousStep
-    let startOpacity = this.state.startOpacity
+    const initionVerticalPosition = this.state.initionVerticalPosition
     const startScaleX = this.state.startScaleX
-    const heightViewport = this.state.heightViewport
-    const position = this.state.position
+    let startOpacity = this.state.startOpacity
 
-    const stepSlide = 40
+    const heightViewport = this.heightViewport
+    const position = this.position
+    const bottomPosition = this.props.bottomPosition
+
+    const stepSlide = this.props.stepSlide
 
     const newVerticalStep = step - stepSlide * (inversionPosition) + 302
 
+    //Дублируем предыдущие
     let newVerticalPosition = previousVerticalPosition
     let newRotate = previousRotate
     let newOpacity = previousOpacity
@@ -241,99 +311,139 @@ class CardImage extends Component {
     let newScaleX = previousScaleX
 
     if (step < 0) {
-
+      newVerticalPosition = startVerticalPosition
       switch (inversionPosition) {
         case 0:
-          newVerticalPosition = startVerticalPosition + step * 1.4
+          newVerticalPosition += step * 1.4
           break
         case 1:
-          newVerticalPosition = startVerticalPosition + step * 1.8
+          newVerticalPosition += step * 1.8
           break
         case 2:
-          newVerticalPosition = startVerticalPosition + step * 2.2
+          newVerticalPosition += step * 2.2
+          break
+        case 3:
+          newVerticalPosition = initionVerticalPosition
+          newVerticalPosition += step
+          console.log(newVerticalPosition)
           break
         default:
-          newVerticalPosition = previousVerticalPosition + changeY
+          console.log(newVerticalPosition)
+          newVerticalPosition = initionVerticalPosition
+          newVerticalPosition += step
 
-        //if (newVerticalPosition > startVerticalPosition) newVerticalPosition = startVerticalPosition
+        if ((newVerticalPosition > startVerticalPosition) && (inversionPosition < 3)) newVerticalPosition = startVerticalPosition
       }
 
+    } else if ((step === 0) && (initionVerticalPosition != null)) {
+      console.log('here');
+      this.setState({
+        verticalPosition: initionVerticalPosition
+      })
     } else {
-
       let startPoint = startVerticalPosition
       let localStep = 0.16
       let decreaseStep = 0
       let stepPoint = (inversionPosition > 2) ? newVerticalStep : step
 
+      // Если превысели брекпоинт (против белых прогалов на быстрой прокрутке - changeY)
+      let maxOfBreakpoint = 0.08
+      // Значение следующего шага
+      let nextLocalStep = 0.8
+      // разница между шагами
+
       switch (inversionPosition) {
         case 0:
           localStep = 3
+          maxOfBreakpoint = 1
+          nextLocalStep = 2.8
 
           if (newVerticalPosition >= heightViewport * 1) {
             startPoint = heightViewport * 1
             decreaseStep += (heightViewport * 1 - startVerticalPosition) / localStep
             localStep = 2.8
+            maxOfBreakpoint = Infinity
           }
           break
         case 1:
 
           localStep = 2.1
+          maxOfBreakpoint = 0.38
+          nextLocalStep = 2.5
 
           if (newVerticalPosition >= heightViewport * 0.38) {
             startPoint = heightViewport * 0.38
             decreaseStep += (heightViewport * 0.38 - startVerticalPosition) / localStep
             localStep = 2.5
+            maxOfBreakpoint = 0.7
+            nextLocalStep = 2.9
           }
 
           if (newVerticalPosition >= heightViewport * 0.7) {
             startPoint = heightViewport * 0.7
             decreaseStep += (heightViewport * 0.32) / localStep
             localStep = 2.9
+            maxOfBreakpoint = 0.8
+            nextLocalStep = 3.85
           }
 
           if (newVerticalPosition >= heightViewport * 0.8) {
             startPoint = heightViewport * 0.8
             decreaseStep += (heightViewport * 0.1) / localStep
             localStep = 3.85
+            maxOfBreakpoint = 0.9
+            nextLocalStep = 4.45
           }
 
           if (newVerticalPosition >= heightViewport * 0.9) {
             startPoint = heightViewport * 0.9
             decreaseStep += heightViewport * 0.1 / localStep
             localStep = 4.45
+            maxOfBreakpoint = 0.95
+            nextLocalStep = 3.85
           }
 
           if (newVerticalPosition >= heightViewport * 0.95) {
             startPoint = heightViewport * 0.95
             decreaseStep += heightViewport * 0.05 / localStep
             localStep = 3.85
+            maxOfBreakpoint = 1
+            nextLocalStep = 1.9
           }
 
           if (newVerticalPosition >= heightViewport * 1) {
             startPoint = heightViewport * 1
             decreaseStep += heightViewport * 0.05 / localStep
             localStep = 1.9
+            maxOfBreakpoint = Infinity
           }
           break
         case 2:
           localStep = 1.65
+          maxOfBreakpoint = 0.5
+          nextLocalStep = 3.9
 
           if (newVerticalPosition >= heightViewport * 0.5) {
             startPoint = heightViewport * 0.5
             decreaseStep += (heightViewport * 0.5 - startVerticalPosition) / localStep
             localStep = 3.9
+            maxOfBreakpoint = 0.8
+            nextLocalStep = 2.98
           }
 
           if (newVerticalPosition >= heightViewport * 0.8) {
             startPoint = heightViewport * 0.8
             decreaseStep += heightViewport * 0.3 / localStep
             localStep = 2.98
+            maxOfBreakpoint = 0.9
+            nextLocalStep = 2.1
           }
 
           if (newVerticalPosition >= heightViewport * 0.9) {
             startPoint = heightViewport * 0.9
             decreaseStep += heightViewport * 0.1 / localStep
             localStep = 2.1
+            maxOfBreakpoint = Infinity
           }
 
           break
@@ -342,82 +452,107 @@ class CardImage extends Component {
             decreaseStep = (heightViewport * 0.08 - startVerticalPosition) / localStep
             startPoint = heightViewport * 0.08
             localStep = 0.8
+            maxOfBreakpoint = 0.15
+            nextLocalStep = 1.6
           }
 
           if (newVerticalPosition >= heightViewport * 0.15) {
             decreaseStep += heightViewport * 0.07 / localStep
             startPoint = heightViewport * 0.15
             localStep = 1.6
+            maxOfBreakpoint = 0.2
+            nextLocalStep = 2.1
           }
 
           if (newVerticalPosition >= heightViewport * 0.2) {
             decreaseStep += heightViewport * 0.05 / localStep
             startPoint = heightViewport * 0.2
             localStep = 2.1
+            maxOfBreakpoint = 0.3
+            nextLocalStep = 2.5
           }
 
           if (newVerticalPosition >= heightViewport * 0.3) {
             decreaseStep += heightViewport * 0.1 / localStep
             startPoint = heightViewport * 0.3
             localStep = 2.5
+            maxOfBreakpoint = 0.4
+            nextLocalStep = 2.7
           }
 
           if (newVerticalPosition >= heightViewport * 0.4) {
             decreaseStep += heightViewport * 0.1 / localStep
             startPoint = heightViewport * 0.4
             localStep = 2.7
+            maxOfBreakpoint = 0.5
+            nextLocalStep = 2.9
           }
 
           if (newVerticalPosition >= heightViewport * 0.5) {
             decreaseStep += heightViewport * 0.1 / localStep
             startPoint = heightViewport * 0.5
             localStep = 2.9
+            maxOfBreakpoint = 0.6
+            nextLocalStep = 3.1
           }
 
           if (newVerticalPosition >= heightViewport * 0.6) {
             decreaseStep += heightViewport * 0.1 / localStep
             startPoint = heightViewport * 0.6
             localStep = 3.1
+            maxOfBreakpoint = 0.75
+            nextLocalStep = 3.1
           }
 
           if (newVerticalPosition >= heightViewport * 0.75) {
             decreaseStep += heightViewport * 0.15 / localStep
             startPoint = heightViewport * 0.75
             localStep = 3.1
+            maxOfBreakpoint = 0.8
+            nextLocalStep = 3.05
           }
 
           if (newVerticalPosition >= heightViewport * 0.8) {
             decreaseStep += heightViewport * 0.05 / localStep
             startPoint = heightViewport * 0.8
             localStep = 3.05
+            maxOfBreakpoint = 0.85
+            nextLocalStep = 2.8
           }
 
           if (newVerticalPosition >= heightViewport * 0.85) {
             decreaseStep += heightViewport * 0.05 / localStep
             startPoint = heightViewport * 0.85
             localStep = 2.8
+            maxOfBreakpoint = 0.9
+            nextLocalStep = 2.9
           }
 
           if (newVerticalPosition >= heightViewport * 0.9) {
             decreaseStep += heightViewport * 0.05 / localStep
             startPoint = heightViewport * 0.9
             localStep = 2.9
+            maxOfBreakpoint = 0.95
+            nextLocalStep = 2.45
           }
 
           if (newVerticalPosition >= heightViewport * 0.95) {
             decreaseStep += heightViewport * 0.05 / localStep
             startPoint = heightViewport * 0.95
             localStep = 2.45
+            maxOfBreakpoint = 0.98
+            nextLocalStep = 2.1
           }
 
           if (newVerticalPosition >= heightViewport * 0.98) {
             decreaseStep += heightViewport * 0.03 / localStep
             startPoint = heightViewport * 0.98
             localStep = 2.1
+            maxOfBreakpoint = Infinity
           }
       }
 
-      newVerticalPosition = startPoint + (stepPoint - decreaseStep) * localStep
+      newVerticalPosition = this._setVerticalPosition(startPoint, stepPoint, decreaseStep, localStep, maxOfBreakpoint, nextLocalStep, heightViewport)
 
       const proportion = newVerticalPosition / heightViewport
 
@@ -426,18 +561,30 @@ class CardImage extends Component {
       newRotate = startRotate + proportion * (90 - startRotate)
       newRotateSecond = startRotateSecond + proportion * (35 - startRotateSecond)
 
+      if (step - this.stepSlide * (total) + bottomPosition > 0) {
+        newRotate = startRotate + proportion * (90 - startRotate) + 15 * (step - this.stepSlide * (total) + bottomPosition) / step
+      }
 
       switch (position) {
         case 0:
           newScaleX = startScaleX + ((newVerticalPosition - startVerticalPosition) / (heightViewport * 0.1)) * (1 - startScaleX)
           newOpacity = startOpacity + ((newVerticalPosition - startVerticalPosition - 20) / (heightViewport * 0.05)) * (1 - startOpacity)
           if (newVerticalPosition > 10) newVerticalPosition = 10
-          break;
+          break
         case 1:
           if (newVerticalPosition > win.width / 1.6 - 60) newVerticalPosition = win.width / 1.6 - 60
+          break
         case 2:
-          if (newVerticalPosition >  2 * win.width / 1.6 - 155) newVerticalPosition = 2 * win.width / 1.6 - 155
+          if (newVerticalPosition > 2 * win.width / 1.6 - 155) newVerticalPosition = 2 * win.width / 1.6 - 155
+          break
+        case 3:
+          if (newVerticalPosition > 3 * win.width / 1.6 - 280) newVerticalPosition = 3 * win.width / 1.6 - 280
+          break
+        case 4:
+          if (newVerticalPosition > 4 * win.width / 1.6 - 435) newVerticalPosition = 4 * win.width / 1.6 - 440
+          break
         default:
+          if (newVerticalPosition > position * win.width / 1.6) newVerticalPosition = position * win.width / 1.6
 
       }
 
@@ -451,7 +598,8 @@ class CardImage extends Component {
       rotate: newRotate,
       opacity: newOpacity,
       scaleX: newScaleX,
-      rotateSecond: newRotateSecond
+      rotateSecond: newRotateSecond,
+      initionVerticalPosition: ((initionVerticalPosition === null) && (step === 0)) ? newVerticalPosition : initionVerticalPosition
     })
   }
 
