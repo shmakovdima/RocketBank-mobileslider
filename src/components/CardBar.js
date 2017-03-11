@@ -16,7 +16,7 @@ import {
 
 // Генератор карт
 let dataCards = []
-for (let i = 0; i <= 15; i++) {
+for (let i = 0; i <= 7; i++) {
   dataCards[i] = {
     type: 'USD',
     value: '4000'
@@ -60,17 +60,6 @@ export default class PurchasesBar extends Component {
       let timer = setInterval(() => {
         let timePassed = Date.now() - startTime
 
-        // Если время вышло, окончательно ставим в начальную позицию и возобновляем работу PanResponder
-        if (timePassed >= totalDuration) {
-          clearInterval(timer)
-          this.setState({
-            prevY: 0,
-            dY: 0
-          })
-          resolve('success')
-          return false
-        }
-
         // Расчет текущей позиции
         let position = (this.blockTopPosition) * (totalDuration - timePassed) / totalDuration
 
@@ -80,12 +69,25 @@ export default class PurchasesBar extends Component {
           dY: position,
           prevY: position
         })
+
+        // Если время вышло, окончательно ставим в начальную позицию и возобновляем работу PanResponder
+        if (timePassed >= totalDuration) {
+          clearInterval(timer)
+          resolve('success')
+          return false
+        }
+
+
       }, 20)
     })
 
     timePromise.then(
       success => {
         setTimeout(() => this.stopPan = false, 500)
+        this.setState({
+          prevY: 0,
+          dY: 0
+        })
       },
       error => alert('Ошибка в приложении, перезапустите')
     )
@@ -275,7 +277,11 @@ class CardImage extends Component {
 
   _setPosition () {
     // Шаг
-    const step = this.props.step
+    let step = this.props.step
+
+    if ((step == 0) && (initionVerticalPosition != null)) {
+      alert('ok')
+    }
     const changeY = step - previousStep
     // Предыдущие позиции
     const previousStep = this.state.previousStep
@@ -331,15 +337,8 @@ class CardImage extends Component {
           console.log(newVerticalPosition)
           newVerticalPosition = initionVerticalPosition
           newVerticalPosition += step
-
-        if ((newVerticalPosition > startVerticalPosition) && (inversionPosition < 3)) newVerticalPosition = startVerticalPosition
+          if ((newVerticalPosition > startVerticalPosition) && (inversionPosition < 3)) newVerticalPosition = startVerticalPosition
       }
-
-    } else if ((step === 0) && (initionVerticalPosition != null)) {
-      console.log('here');
-      this.setState({
-        verticalPosition: initionVerticalPosition
-      })
     } else {
       let startPoint = startVerticalPosition
       let localStep = 0.16
@@ -553,6 +552,8 @@ class CardImage extends Component {
       }
 
       newVerticalPosition = this._setVerticalPosition(startPoint, stepPoint, decreaseStep, localStep, maxOfBreakpoint, nextLocalStep, heightViewport)
+
+      if (newVerticalPosition <= initionVerticalPosition) newVerticalPosition = initionVerticalPosition
 
       const proportion = newVerticalPosition / heightViewport
 
