@@ -16,7 +16,7 @@ import {
 
 // Генератор карт
 let dataCards = []
-for (let i = 0; i <= 3; i++) {
+for (let i = 0; i <= 6; i++) {
   dataCards[i] = {
     type: 'USD',
     value: '4000'
