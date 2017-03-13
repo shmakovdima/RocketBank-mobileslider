@@ -16,7 +16,7 @@ import {
 
 // Генератор карт
 let dataCards = []
-for (let i = 0; i <= 6; i++) {
+for (let i = 0; i <= 3; i++) {
   dataCards[i] = {
     type: 'USD',
     value: '4000'
@@ -43,8 +43,8 @@ export default class PurchasesBar extends Component {
 
     // Для 4 карт
     if (dataCards.length === 4) {
-      this.blockBottomPosition = 45
-      this.bottomPosition = 60
+      this.blockBottomPosition = 47
+      this.bottomPosition = 59
     }
     // Менее 4 карт
     if (dataCards.length < 4) {
@@ -294,6 +294,9 @@ class CardImage extends Component {
         break
       case 4:
         startOpacity = 0.1
+        break
+      case this.total - 1:
+        startVerticalPosition: 20
         break
       default:
         break
@@ -693,19 +696,19 @@ class CardImage extends Component {
         case 0:
           newScaleX = startScaleX + ((newVerticalPosition - startVerticalPosition) / (heightViewport * 0.1)) * (1 - startScaleX)
           newOpacity = startOpacity + ((newVerticalPosition - startVerticalPosition - 20) / (heightViewport * 0.05)) * (1 - startOpacity)
-          if (newVerticalPosition > 10) newVerticalPosition = 10
+          if (newVerticalPosition > 20) newVerticalPosition = 20
           break
         case 1:
-          if (newVerticalPosition > win.width / 1.6 - 60) newVerticalPosition = win.width / 1.6 - 60
+          if (newVerticalPosition > win.width / 1.6 - 55) newVerticalPosition = win.width / 1.6 - 55
           break
         case 2:
-          if (newVerticalPosition > 2 * win.width / 1.6 - 160) newVerticalPosition = 2 * win.width / 1.6 - 160
+          if (newVerticalPosition > 2 * win.width / 1.6 - 155) newVerticalPosition = 2 * win.width / 1.6 - 155
           break
         case 3:
-          if (newVerticalPosition > 3 * win.width / 1.6 - 285) newVerticalPosition = 3 * win.width / 1.6 - 285
+          if (newVerticalPosition > 3 * win.width / 1.6 - 280) newVerticalPosition = 3 * win.width / 1.6 - 280
           break
         case 4:
-          if (newVerticalPosition > 4 * win.width / 1.6 - 445) newVerticalPosition = 4 * win.width / 1.6 - 445
+          if (newVerticalPosition > 4 * win.width / 1.6 - 440) newVerticalPosition = 4 * win.width / 1.6 - 440
           break
         default:
           if (newVerticalPosition > position * win.width / 1.6) newVerticalPosition = position * win.width / 1.6
