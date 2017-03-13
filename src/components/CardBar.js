@@ -16,7 +16,7 @@ import {
 
 // Генератор карт
 let dataCards = []
-for (let i = 0; i <= 5; i++) {
+for (let i = 0; i <= 6; i++) {
   dataCards[i] = {
     type: 'USD',
     value: '4000'
@@ -31,9 +31,9 @@ export default class PurchasesBar extends Component {
     // Позиция конца инерции в верхней позиции
     this.blockTopPosition = -25
     // Позиция конца инерции в нижней позиции
-    this.blockBottomPosition = 53
+    this.blockBottomPosition = 51
     // Последний элемент сдвига вниз
-    this.bottomPosition = 65
+    this.bottomPosition = 60
     // Блок работы PanResponder
     this.stopPan = false
     // Длительность анимации инерции
@@ -201,7 +201,7 @@ export default class PurchasesBar extends Component {
         if ((currentStep <= 0) && (this.stopPan === false)) {
           this._toStartTopPoint(currentStep, currentStep / this.blockTopPosition)
           return false
-        // Старт Нижней инерции
+        // Старт нижней инерции
         } else if ((currentStep - this.stepSlide * (dataCards.length)) + this.blockBottomPosition > 0) {
           this._toStartBottomPoint(this.stepSlide * (dataCards.length) - this.blockBottomPosition)
           return false
@@ -238,14 +238,13 @@ export default class PurchasesBar extends Component {
       height: (dataCards.length !== 1) ? win.width / 1.6 + constHeight + stepHeightNextBlock : win.width / 1.6
     }
 
-
     return (
       <Animated.View style={[ Style.cardBar, heightViewport ]} {...this._panResponder.panHandlers}>
         {
           dataCards.map((item, key) => {
             return (
               <View key={key}>
-                <CardImage item={item} total={dataCards.length} position={key} stepSlide ={this.stepSlide} step={this.state.dY}/>
+                <CardImage item={item} total={dataCards.length} position={key} stepSlide={this.stepSlide} step={this.state.dY}/>
               </View>
             )
           })
@@ -274,7 +273,6 @@ class CardImage extends Component {
     let startScaleX = 0.9
 
     // Cтавим согласно дизайну первые карты
-
     switch (this.inversionPosition) {
       case 0:
         startPosition = 120
@@ -403,8 +401,10 @@ class CardImage extends Component {
     let startOpacity = this.state.startOpacity
 
     const heightViewport = this.heightViewport
+    // Шаг карт
     const stepSlide = this.props.stepSlide
 
+    // Сдвиг для нестартовых карт
     let changeOfStartCardPosition = 302
 
     // Шаг для нестартовых карт
@@ -446,6 +446,7 @@ class CardImage extends Component {
           newVerticalPosition += step
           if ((newVerticalPosition > startVerticalPosition) && (inversionPosition < 3)) newVerticalPosition = startVerticalPosition
       }
+
       // Пропорция положения/высоты экрана
       const proportion = newVerticalPosition / heightViewport
 
@@ -453,6 +454,7 @@ class CardImage extends Component {
       if (total !== 4) {
         newScaleX = startScaleX + ((newVerticalPosition - startVerticalPosition) / (heightViewport * 0.1)) * (1 - startScaleX)
       }
+
       // Выставление значений
       newRotate = startRotate + proportion * (90 - startRotate)
       newRotateSecond = startRotateSecond + proportion * (35 - startRotateSecond)
@@ -735,7 +737,8 @@ class CardImage extends Component {
       opacity: newOpacity,
       scaleX: newScaleX,
       rotateSecond: newRotateSecond,
-      initionVerticalPosition: ((initionVerticalPosition === null) && (step === 0)) ? newVerticalPosition : initionVerticalPosition //Рассчитаная позиция на step == 0 для всех карт
+      //Рассчитаная позиция на step == 0 для всех карт
+      initionVerticalPosition: ((initionVerticalPosition === null) && (step === 0)) ? newVerticalPosition : initionVerticalPosition
     })
   }
 
